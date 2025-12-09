@@ -205,6 +205,35 @@ impl PageTable {
         SATP_SV39 | ((self as *const PageTable as usize) >> PGSHIFT)
     }
 
+    /// 递归打印页表内容 (Lab 2: Print Page Table)
+    pub fn vm_print(&self, level: usize) {
+        // 仅在顶层打印一次页表地址
+        if level == 0 {
+            println!("page table {:#x}", self as *const _ as usize);
+        }
+
+        // 遍历 512 个页表项
+        for (i, pte) in self.data.iter().enumerate() {
+            if pte.is_valid() {
+                // 根据层级打印缩进 ".. "
+                for _ in 0..=level {
+                    print!(".. ");
+                }
+                
+                let pa = pte.as_phys_addr();
+                println!("{}: pte {:#x} pa {:#x}", i, pte.data, pa.as_usize());
+
+                // 如果不是叶子节点，递归打印下一级
+                if !pte.is_leaf() {
+                    // 获取下一级页表的引用
+                    // 注意：这里假设内核可以直接通过物理地址访问页表（恒等映射或直接映射）
+                    let child_pt = unsafe { &*pte.as_page_table() };
+                    child_pt.vm_print(level + 1);
+                }
+            }
+        }
+    }
+
     /// # 功能说明
     /// 在当前页表及其多级子页表中建立从虚拟地址 `va` 开始、长度为 `size` 字节的连续映射，  
     /// 将虚拟地址区间映射到物理地址 `pa` 开始的对应区间，权限由 `perm` 指定。  

@@ -186,6 +186,18 @@ impl Syscall for Proc {
             }
         }
 
+        // 如果 exec 成功 (result 是 Ok)，且当前是 init 进程 (pid 1)，则打印页表
+        if result.is_ok() {
+            let guard = self.excl.lock();
+            if guard.pid == 1 {
+                let data = self.data.get_mut();
+                if let Some(ref pt) = data.pagetable {
+                    pt.vm_print(0);
+                }
+            }
+            drop(guard);
+        }
+
         #[cfg(feature = "trace_syscall")]
         println!("[{}].exec({}, {:#x}) = {:?}", self.excl.lock().pid, String::from_utf8_lossy(&path), uargv, result);
 
