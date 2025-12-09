@@ -102,6 +102,8 @@ pub struct ProcData {
     pub pagetable: Option<Box<PageTable>>,
     /// 进程当前工作目录的 inode。
     pub cwd: Option<Inode>,
+    /// 跟踪系统调用的掩码
+    pub trace_mask: i32,  // <--- 添加这一行
 }
 
 
@@ -116,6 +118,7 @@ impl ProcData {
             tf: ptr::null_mut(),
             pagetable: None,
             cwd: None,
+            trace_mask: 0, // <--- 添加这一行
         }
     }
 
@@ -690,6 +693,9 @@ impl Proc {
         
         // copy process name
         cdata.name.copy_from_slice(&pdata.name);
+
+        // --- 添加下面这一行 ---
+        cdata.trace_mask = pdata.trace_mask;
 
         let cpid = cexcl.pid;
 
