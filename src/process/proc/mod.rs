@@ -22,6 +22,11 @@ use super::{fork_ret, Context, TrapFrame};
 
 use self::syscall::Syscall;
 
+/// 数组添加
+static SYSCALL_NAMES: &[&str] = &[
+    "", "fork", "exit", "wait", "pipe", "read", "kill", "exec", "fstat", "chdir", "dup", "getpid", "sbrk", "sleep", "uptime", "open", "write", "mknod", "unlink", "link", "mkdir", "close", "trace",
+];
+
 mod syscall;
 mod elf;
 
@@ -523,6 +528,7 @@ impl Proc {
             19 => self.sys_link(),
             20 => self.sys_mkdir(),
             21 => self.sys_close(),
+            22 => self.sys_trace(), 
             _ => {
                 panic!("unknown syscall num: {}", a7);
             }
@@ -531,6 +537,19 @@ impl Proc {
             Ok(ret) => ret,
             Err(()) => -1isize as usize,
         };
+
+         // --- 添加以下 Tracing 逻辑 ---
+        let trace_mask = self.data.get_mut().trace_mask;
+        // 检查 mask 的第 a7 位是否为 1
+        if (trace_mask >> a7) & 1 == 1 {
+            let pid = self.excl.lock().pid;
+            // 确保索引不越界
+            if a7 < SYSCALL_NAMES.len() {
+                println!("{}: syscall {} -> {}", pid, SYSCALL_NAMES[a7], tf.a0 as isize);
+            } else {
+                println!("{}: syscall ? -> {}", pid, tf.a0 as isize);
+            }
+        }
     }
 
     /// # 功能说明
