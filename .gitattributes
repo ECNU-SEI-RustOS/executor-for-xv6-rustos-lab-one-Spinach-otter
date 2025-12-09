@@ -1,0 +1,8 @@
+# 强制所有文件在检出时使用 LF（Linux 换行符）
+* text=auto eol=lf
+
+# 特别指定脚本文件强制使用 LF
+*.sh text eol=lf
+*.py text eol=lf
+*.pl text eol=lf
+grade-lab text eol=lf
